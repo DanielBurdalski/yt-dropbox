@@ -39,15 +39,11 @@ def list_available_formats(url):
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
-        'format': 'best'
+        'listformats': True
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
-            info = ydl.extract_info(url, download=False)
-            formats = info.get('formats', [])
-            print("Available formats:")
-            for f in formats:
-                print(f"Format ID: {f['format_id']}, Resolution: {f.get('format_note', 'N/A')}, Extension: {f.get('ext', 'N/A')}")
+            ydl.extract_info(url, download=False)
         except Exception as e:
             print(f"Error listing formats: {e}")
 
@@ -71,10 +67,11 @@ def archive_last_live():
         print("No completed live stream available.")
         return
 
+    print("Available formats:")
     list_available_formats(last_live_url)
     
     ydl_opts = {
-        'format': 'best',
+        'format': 'best[ext=mp4]',  # Prefer mp4 format
         'outtmpl': '%(title)s-%(id)s.%(ext)s'
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -88,10 +85,25 @@ def archive_last_live():
             if upload_result:
                 print(f"Upload successful. File ID: {upload_result.get('file_code')}")
             
+        except yt_dlp.utils.DownloadError as e:
+            print(f"Download error: {e}")
+            print("Trying alternative format...")
+            ydl_opts['format'] = 'best'  # Try the best available format
+            try:
+                info = ydl.extract_info(last_live_url, download=True)
+                upload_date = datetime.strptime(info['upload_date'], '%Y%m%d').strftime('%d_%m_%Y')
+                filename = f"PaszaTV-{upload_date}.{info['ext']}"
+                os.rename(ydl.prepare_filename(info), filename)
+                
+                upload_result = upload_to_doodstream(filename)
+                if upload_result:
+                    print(f"Upload successful. File ID: {upload_result.get('file_code')}")
+            except Exception as e:
+                print(f"Error during alternative download: {e}")
         except Exception as e:
             print(f"Error during download or upload: {e}")
         finally:
-            if os.path.exists(filename):
+            if 'filename' in locals() and os.path.exists(filename):
                 os.remove(filename)
                 print(f"Temporary file {filename} removed.")
 
