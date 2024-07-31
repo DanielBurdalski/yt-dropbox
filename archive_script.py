@@ -3,6 +3,7 @@ from datetime import datetime
 import os
 import sys
 import dropbox
+import subprocess
 
 DROPBOX_ACCESS_TOKEN = os.getenv('DROPBOX_ACCESS_TOKEN')
 
@@ -46,7 +47,7 @@ def archive_last_live():
         return
 
     ydl_opts = {
-        'format': 'best',
+        'format': 'best/bestvideo+bestaudio/best',
         'outtmpl': '%(title)s-%(id)s.%(ext)s'
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -65,6 +66,9 @@ def archive_last_live():
 
 if __name__ == "__main__":
     try:
+        # Update yt-dlp to the latest version
+        subprocess.run(['pip', 'install', '--upgrade', 'yt-dlp'])
+        
         archive_last_live()
     except Exception as e:
         print(f"An error occurred: {e}")
