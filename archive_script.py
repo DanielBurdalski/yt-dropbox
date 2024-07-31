@@ -2,9 +2,13 @@ import yt_dlp
 from datetime import datetime
 import os
 import sys
-import dropbox
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
 
-DROPBOX_ACCESS_TOKEN = os.getenv('DROPBOX_ACCESS_TOKEN')
+def authenticate_google_drive():
+    gauth = GoogleAuth()
+    gauth.LocalWebserverAuth()  # Creates local webserver and auto handles authentication.
+    return GoogleDrive(gauth)
 
 CHANNEL_URL = 'https://www.youtube.com/@PaszaTV/streams'
 
@@ -27,13 +31,9 @@ def get_last_completed_live_stream(channel_url):
             return None
     return None
 
-def upload_to_dropbox(file_path, dropbox_path):
-    dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
-    with open(file_path, "rb") as f:
-        dbx.files_upload(f.read(), dropbox_path)
-    print(f"File uploaded to Dropbox: {dropbox_path}")
-
 def archive_last_live():
+    drive = authenticate_google_drive()
+
     last_live_url = get_last_completed_live_stream(CHANNEL_URL)
     if not last_live_url:
         print("Brak dostępnej zakończonej transmisji na żywo.")
@@ -41,8 +41,7 @@ def archive_last_live():
 
     ydl_opts = {
         'format': 'best',
-        'outtmpl': '%(title)s-%(id)s.%(ext)s',
-        'cookiefile': 'cookies.txt'  # Path to your cookies file
+        'outtmpl': '%(title)s-%(id)s.%(ext)s'
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(last_live_url, download=True)
@@ -51,8 +50,10 @@ def archive_last_live():
         os.rename(ydl.prepare_filename(info), filename)
 
     try:
-        dropbox_path = f"/{filename}"
-        upload_to_dropbox(filename, dropbox_path)
+        file_drive = drive.CreateFile({'title': filename})
+        file_drive.SetContentFile(filename)
+        file_drive.Upload()
+        print(f"File uploaded to Google Drive: {file_drive['title']}")
     except Exception as e:
         print(f"Error during upload: {e}")
     finally:
