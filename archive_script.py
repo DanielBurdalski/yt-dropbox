@@ -42,27 +42,21 @@ def archive_last_live():
     ydl_opts = {
         'format': 'best',
         'outtmpl': '%(title)s-%(id)s.%(ext)s',
-        'noplaylist': True,
-        'no_warnings': True,
-        'quiet': True,
-        'force_generic_extractor': True
+        'cookiefile': 'cookies.txt'  # Path to your cookies file
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        try:
-            info = ydl.extract_info(last_live_url, download=True)
-            upload_date = datetime.strptime(info['upload_date'], '%Y%m%d').strftime('%d_%m_%Y')
-            filename = f"PaszaTV-{upload_date}.{info['ext']}"
-            os.rename(ydl.prepare_filename(info), filename)
+        info = ydl.extract_info(last_live_url, download=True)
+        upload_date = datetime.strptime(info['upload_date'], '%Y%m%d').strftime('%d_%m_%Y')
+        filename = f"PaszaTV-{upload_date}.{info['ext']}"
+        os.rename(ydl.prepare_filename(info), filename)
 
-            dropbox_path = f"/{filename}"
-            upload_to_dropbox(filename, dropbox_path)
-        except yt_dlp.utils.DownloadError as e:
-            print(f"Error during download: {e}")
-        except Exception as e:
-            print(f"Error during upload: {e}")
-        finally:
-            if os.path.exists(filename):
-                os.remove(filename)
+    try:
+        dropbox_path = f"/{filename}"
+        upload_to_dropbox(filename, dropbox_path)
+    except Exception as e:
+        print(f"Error during upload: {e}")
+    finally:
+        os.remove(filename)
 
 if __name__ == "__main__":
     try:
