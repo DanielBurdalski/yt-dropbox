@@ -1,3 +1,9 @@
+try:
+    import yt_dlp
+except ImportError:
+    print("yt_dlp library is not installed. Please install it with `pip install yt-dlp`.")
+    sys.exit(1)
+
 import requests
 from datetime import datetime
 import os
@@ -9,8 +15,6 @@ DOODSTREAM_API_KEY = os.getenv('DOODSTREAM_API_KEY')
 CHANNEL_URL = 'https://www.youtube.com/@PaszaTV/streams'
 
 def get_last_completed_live_stream(channel_url):
-    import yt_dlp
-    
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
