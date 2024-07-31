@@ -47,7 +47,7 @@ def get_available_formats(url):
             formats = info.get('formats', [])
             print("Available formats:")
             for f in formats:
-                print(f"Format ID: {f['format_id']}, Extension: {f.get('ext', 'N/A')}, Resolution: {f.get('resolution', 'N/A')}, Filesize: {f.get('filesize', 'N/A')}, Protocol: {f.get('protocol', 'N/A')}")
+                print(f"Format ID: {f['format_id']}, Extension: {f.get('ext', 'N/A')}, Resolution: {f.get('resolution', 'N/A')}, Filesize: {f.get('filesize', 'N/A')}, Protocol: {f.get('protocol', 'N/A')}, vcodec: {f.get('vcodec', 'N/A')}, acodec: {f.get('acodec', 'N/A')}")
             return formats
         except Exception as e:
             print(f"Error getting available formats: {e}")
@@ -78,15 +78,22 @@ def archive_last_live():
         print("No formats available for download.")
         return
 
-    # Try to find the best format that's not a dash manifest
-    best_format = next((f for f in formats if f.get('protocol') != 'dash' and f.get('acodec') != 'none' and f.get('vcodec') != 'none'), None)
-    
+    # Try to find the best format
+    best_format = None
+    for f in formats:
+        if f.get('vcodec') != 'none' and f.get('acodec') != 'none' and f.get('protocol') in ['https', 'm3u8_native']:
+            if best_format is None or (f.get('height', 0) > best_format.get('height', 0)):
+                best_format = f
+
     if not best_format:
-        print("No suitable format found for download.")
-        return
+        print("No suitable format found for download. Using 'best' option.")
+        format_option = 'best'
+    else:
+        format_option = best_format['format_id']
+        print(f"Selected format: {format_option}")
 
     ydl_opts = {
-        'format': best_format['format_id'],
+        'format': format_option,
         'outtmpl': '%(title)s-%(id)s.%(ext)s'
     }
     
@@ -94,7 +101,7 @@ def archive_last_live():
         try:
             info = ydl.extract_info(last_live_url, download=True)
             upload_date = datetime.strptime(info['upload_date'], '%Y%m%d').strftime('%d_%m_%Y')
-            filename = f"PaszaTV-{upload_date}.{best_format['ext']}"
+            filename = f"PaszaTV-{upload_date}.{info['ext']}"
             os.rename(ydl.prepare_filename(info), filename)
             
             upload_result = upload_to_doodstream(filename)
