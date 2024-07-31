@@ -41,7 +41,8 @@ def archive_last_live():
 
     ydl_opts = {
         'format': 'best',
-        'outtmpl': '%(title)s-%(id)s.%(ext)s'
+        'outtmpl': '%(title)s-%(id)s.%(ext)s',
+        'cookiefile': 'cookies.txt'  # Path to your cookies file
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(last_live_url, download=True)
