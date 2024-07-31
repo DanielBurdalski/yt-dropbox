@@ -46,4 +46,27 @@ def archive_last_live():
         return
 
     ydl_opts = {
-        'format
+        'format': 'best/bestvideo+bestaudio/best',
+        'outtmpl': '%(title)s-%(id)s.%(ext)s',
+        'merge_output_format': 'mp4'
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(second_live_url, download=True)
+        upload_date = datetime.strptime(info['upload_date'], '%Y%m%d').strftime('%d_%m_%Y')
+        filename = f"PaszaTV-{upload_date}.{info['ext']}"
+        os.rename(ydl.prepare_filename(info), filename)
+
+    try:
+        dropbox_path = f"/{filename}"
+        upload_to_dropbox(filename, dropbox_path)
+    except Exception as e:
+        print(f"Error during upload: {e}")
+    finally:
+        os.remove(filename)
+
+if __name__ == "__main__":
+    try:
+        archive_last_live()
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        sys.exit(1)
