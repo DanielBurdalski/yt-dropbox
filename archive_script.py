@@ -8,7 +8,7 @@ DROPBOX_ACCESS_TOKEN = os.getenv('DROPBOX_ACCESS_TOKEN')
 
 CHANNEL_URL = 'https://www.youtube.com/@PaszaTV/streams'
 
-def get_last_completed_live_stream(channel_url):
+def get_second_completed_live_stream(channel_url):
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
@@ -18,10 +18,16 @@ def get_last_completed_live_stream(channel_url):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             info = ydl.extract_info(channel_url, download=False)
+            completed_streams = []
             if 'entries' in info:
                 for entry in info['entries']:
                     if entry.get('ie_key') == 'Youtube' and entry.get('live_status') == 'was_live':
-                        return f"https://www.youtube.com/watch?v={entry['id']}"
+                        completed_streams.append(entry)
+            if len(completed_streams) >= 2:
+                return f"https://www.youtube.com/watch?v={completed_streams[1]['id']}"
+            else:
+                print("Nie znaleziono wystarczającej liczby zakończonych transmisji na żywo.")
+                return None
         except Exception as e:
             print(f"Error extracting info: {e}")
             return None
@@ -34,9 +40,9 @@ def upload_to_dropbox(file_path, dropbox_path):
     print(f"File uploaded to Dropbox: {dropbox_path}")
 
 def archive_last_live():
-    last_live_url = get_last_completed_live_stream(CHANNEL_URL)
-    if not last_live_url:
-        print("Brak dostępnej zakończonej transmisji na żywo.")
+    second_live_url = get_second_completed_live_stream(CHANNEL_URL)
+    if not second_live_url:
+        print("Brak dostępnej drugiej zakończonej transmisji na żywo.")
         return
 
     ydl_opts = {
@@ -44,7 +50,7 @@ def archive_last_live():
         'outtmpl': '%(title)s-%(id)s.%(ext)s'
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(last_live_url, download=True)
+        info = ydl.extract_info(second_live_url, download=True)
         upload_date = datetime.strptime(info['upload_date'], '%Y%m%d').strftime('%d_%m_%Y')
         filename = f"PaszaTV-{upload_date}.{info['ext']}"
         os.rename(ydl.prepare_filename(info), filename)
