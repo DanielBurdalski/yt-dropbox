@@ -1,16 +1,19 @@
+import os
+import sys
+import requests
+from datetime import datetime
+
 try:
     import yt_dlp
 except ImportError:
-    print("yt_dlp library is not installed. Please install it with `pip install yt-dlp`.")
+    print("yt-dlp library is not installed. Please install it with `pip install yt-dlp`.")
     sys.exit(1)
 
-import requests
-from datetime import datetime
-import os
-import sys
-
-# Zastąp to własnym kluczem API
+# Get API key from environment variable
 DOODSTREAM_API_KEY = os.getenv('DOODSTREAM_API_KEY')
+if not DOODSTREAM_API_KEY:
+    print("DOODSTREAM_API_KEY environment variable is not set.")
+    sys.exit(1)
 
 CHANNEL_URL = 'https://www.youtube.com/@PaszaTV/streams'
 
@@ -25,13 +28,11 @@ def get_last_completed_live_stream(channel_url):
         try:
             info = ydl.extract_info(channel_url, download=False)
             if 'entries' in info:
-                # Zwracanie drugiego strumienia
                 live_entries = [entry for entry in info['entries'] if entry.get('ie_key') == 'Youtube' and entry.get('live_status') == 'was_live']
                 if len(live_entries) > 1:
                     return f"https://www.youtube.com/watch?v={live_entries[1]['id']}"
         except Exception as e:
             print(f"Error extracting info: {e}")
-            return None
     return None
 
 def list_available_formats(url):
@@ -59,16 +60,17 @@ def upload_to_doodstream(file_path):
         response = requests.post(upload_url, headers=headers, files={'file': f})
     if response.status_code == 200:
         print("File uploaded successfully!")
+        return response.json()  # Return the response data
     else:
         print(f"Failed to upload file: {response.status_code}, {response.text}")
+        return None
 
 def archive_last_live():
     last_live_url = get_last_completed_live_stream(CHANNEL_URL)
     if not last_live_url:
-        print("Brak dostępnej zakończonej transmisji na żywo.")
+        print("No completed live stream available.")
         return
 
-    # List available formats to debug
     list_available_formats(last_live_url)
     
     ydl_opts = {
@@ -81,13 +83,17 @@ def archive_last_live():
             upload_date = datetime.strptime(info['upload_date'], '%Y%m%d').strftime('%d_%m_%Y')
             filename = f"PaszaTV-{upload_date}.{info['ext']}"
             os.rename(ydl.prepare_filename(info), filename)
-
-            upload_to_doodstream(filename)
+            
+            upload_result = upload_to_doodstream(filename)
+            if upload_result:
+                print(f"Upload successful. File ID: {upload_result.get('file_code')}")
+            
         except Exception as e:
             print(f"Error during download or upload: {e}")
         finally:
             if os.path.exists(filename):
                 os.remove(filename)
+                print(f"Temporary file {filename} removed.")
 
 if __name__ == "__main__":
     try:
