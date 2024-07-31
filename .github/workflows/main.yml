@@ -14,10 +14,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.11'  # Ustawienie na najnowszą wersję Pythona
-    
-    - name: Update packages
-      run: sudo apt-get update && sudo apt-get upgrade -y
+        python-version: '3.11'  # Ustawienie na najnowszą wersję Python
     
     - name: Install dependencies
       run: |
