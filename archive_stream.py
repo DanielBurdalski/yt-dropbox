@@ -35,17 +35,23 @@ def get_last_completed_live_stream(channel_url):
             print(f"Error extracting info: {e}")
     return None
 
-def list_available_formats(url):
+def get_available_formats(url):
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
-        'listformats': True
+        'youtube_include_dash_manifest': False,
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
-            ydl.extract_info(url, download=False)
+            info = ydl.extract_info(url, download=False)
+            formats = info.get('formats', [])
+            print("Available formats:")
+            for f in formats:
+                print(f"Format ID: {f['format_id']}, Extension: {f.get('ext', 'N/A')}, Resolution: {f.get('resolution', 'N/A')}, Filesize: {f.get('filesize', 'N/A')}, Protocol: {f.get('protocol', 'N/A')}")
+            return formats
         except Exception as e:
-            print(f"Error listing formats: {e}")
+            print(f"Error getting available formats: {e}")
+            return []
 
 def upload_to_doodstream(file_path):
     upload_url = 'https://doodstream.com.tr/api/upload'
@@ -67,39 +73,34 @@ def archive_last_live():
         print("No completed live stream available.")
         return
 
-    print("Available formats:")
-    list_available_formats(last_live_url)
+    formats = get_available_formats(last_live_url)
+    if not formats:
+        print("No formats available for download.")
+        return
+
+    # Try to find the best format that's not a dash manifest
+    best_format = next((f for f in formats if f.get('protocol') != 'dash' and f.get('acodec') != 'none' and f.get('vcodec') != 'none'), None)
     
+    if not best_format:
+        print("No suitable format found for download.")
+        return
+
     ydl_opts = {
-        'format': 'best[ext=mp4]',  # Prefer mp4 format
+        'format': best_format['format_id'],
         'outtmpl': '%(title)s-%(id)s.%(ext)s'
     }
+    
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             info = ydl.extract_info(last_live_url, download=True)
             upload_date = datetime.strptime(info['upload_date'], '%Y%m%d').strftime('%d_%m_%Y')
-            filename = f"PaszaTV-{upload_date}.{info['ext']}"
+            filename = f"PaszaTV-{upload_date}.{best_format['ext']}"
             os.rename(ydl.prepare_filename(info), filename)
             
             upload_result = upload_to_doodstream(filename)
             if upload_result:
                 print(f"Upload successful. File ID: {upload_result.get('file_code')}")
             
-        except yt_dlp.utils.DownloadError as e:
-            print(f"Download error: {e}")
-            print("Trying alternative format...")
-            ydl_opts['format'] = 'best'  # Try the best available format
-            try:
-                info = ydl.extract_info(last_live_url, download=True)
-                upload_date = datetime.strptime(info['upload_date'], '%Y%m%d').strftime('%d_%m_%Y')
-                filename = f"PaszaTV-{upload_date}.{info['ext']}"
-                os.rename(ydl.prepare_filename(info), filename)
-                
-                upload_result = upload_to_doodstream(filename)
-                if upload_result:
-                    print(f"Upload successful. File ID: {upload_result.get('file_code')}")
-            except Exception as e:
-                print(f"Error during alternative download: {e}")
         except Exception as e:
             print(f"Error during download or upload: {e}")
         finally:
