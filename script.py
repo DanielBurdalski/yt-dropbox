@@ -34,6 +34,22 @@ def get_last_completed_live_stream(channel_url):
             return None
     return None
 
+def list_available_formats(url):
+    ydl_opts = {
+        'quiet': True,
+        'no_warnings': True,
+        'format': 'best'
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        try:
+            info = ydl.extract_info(url, download=False)
+            formats = info.get('formats', [])
+            print("Available formats:")
+            for f in formats:
+                print(f"Format ID: {f['format_id']}, Resolution: {f.get('format_note', 'N/A')}, Extension: {f.get('ext', 'N/A')}")
+        except Exception as e:
+            print(f"Error listing formats: {e}")
+
 def upload_to_doodstream(file_path):
     upload_url = 'https://doodstream.com.tr/api/upload'
     headers = {
@@ -52,22 +68,26 @@ def archive_last_live():
         print("Brak dostępnej zakończonej transmisji na żywo.")
         return
 
+    # List available formats to debug
+    list_available_formats(last_live_url)
+    
     ydl_opts = {
         'format': 'best',
         'outtmpl': '%(title)s-%(id)s.%(ext)s'
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(last_live_url, download=True)
-        upload_date = datetime.strptime(info['upload_date'], '%Y%m%d').strftime('%d_%m_%Y')
-        filename = f"PaszaTV-{upload_date}.{info['ext']}"
-        os.rename(ydl.prepare_filename(info), filename)
+        try:
+            info = ydl.extract_info(last_live_url, download=True)
+            upload_date = datetime.strptime(info['upload_date'], '%Y%m%d').strftime('%d_%m_%Y')
+            filename = f"PaszaTV-{upload_date}.{info['ext']}"
+            os.rename(ydl.prepare_filename(info), filename)
 
-    try:
-        upload_to_doodstream(filename)
-    except Exception as e:
-        print(f"Error during upload: {e}")
-    finally:
-        os.remove(filename)
+            upload_to_doodstream(filename)
+        except Exception as e:
+            print(f"Error during download or upload: {e}")
+        finally:
+            if os.path.exists(filename):
+                os.remove(filename)
 
 if __name__ == "__main__":
     try:
