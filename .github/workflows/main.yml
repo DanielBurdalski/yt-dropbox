@@ -3,7 +3,7 @@ name: Archive Latest Stream
 on:
   schedule:
     - cron: '*/5 * * * *'  # będzie uruchamiane o 2:30, 3:30 i 4:30 UTC, w każdy piątek (dzień 5 tygodnia)
-  workflow_dispatch:  # Pozwala na ręczne uruchomienie
+ 
 
 jobs:
   archive-stream:
