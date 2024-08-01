@@ -12,8 +12,8 @@ def get_last_stream():
         'outtmpl': '%(title)s-%(id)s.%(ext)s',
         'playlistend': 1,  # Pobierz tylko najnowszy stream
     }
-with open('example.txt', 'a') as file:                       #  test
-    file.write('To jest nowa linia dopisana do pliku.\n')   #   test
+with open('uploaded.txt', 'a') as file:                       #  test
+    file.write('To jest nowa linia dopisana do pliku.\n')     #   test
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             # Pobierz informacje o streamach
