@@ -3,6 +3,7 @@ name: Archive Latest Stream
 on:
   schedule:
     - cron: '*/5 * * * *'
+  workflow_dispatch:  # Pozwala na ręczne uruchomienie
  
 
 jobs:
