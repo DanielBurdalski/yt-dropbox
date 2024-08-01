@@ -12,7 +12,7 @@ def upload_to_doodstream(file_path):
 
     upload_url = 'https://doodapi.com/api/upload/server'
     headers = {
-        'Authorization': f'Bearer {DOODSTREAM_API_KEY}',
+        'api_key': DOODSTREAM_API_KEY,  # Zmieniono 'Authorization' na 'api_key'
     }
 
     # Pobierz URL do przesyłania
@@ -21,19 +21,27 @@ def upload_to_doodstream(file_path):
         print(f"Błąd podczas pobierania URL do przesyłania: {response.status_code}")
         return False
 
-    upload_server = response.json()['result']
+    upload_server = response.json().get('result')
+    if not upload_server:
+        print("Nie udało się pobrać URL serwera do przesyłania.")
+        return False
 
     # Prześlij plik
     with open(file_path, 'rb') as file:
         files = {'file': file}
-        response = requests.post(upload_server, files=files)
+        data = {'api_key': DOODSTREAM_API_KEY}  # Dodano klucz API do danych formularza
+        response = requests.post(upload_server, files=files, data=data)
 
-    if response.status_code == 200 and response.json()['status'] == 200:
-        print(f"Plik przesłany pomyślnie. URL pliku: {response.json()['result']['download_url']}")
-        return True
+    if response.status_code == 200:
+        result = response.json()
+        if result.get('status') == 200:
+            print(f"Plik przesłany pomyślnie. URL pliku: {result['result']['download_url']}")
+            return True
+        else:
+            print(f"Błąd podczas przesyłania pliku: {result.get('msg')}")
     else:
         print(f"Błąd podczas przesyłania pliku: {response.status_code}, {response.text}")
-        return False
+    return False
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
