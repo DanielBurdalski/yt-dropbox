@@ -3,7 +3,7 @@ import os
 from datetime import datetime, timedelta
 
 # URL kanału
-CHANNEL_URL = 'https://www.youtube.com/@LadyGaga/videos'
+CHANNEL_URL = 'https://www.youtube.com/@MajsterProjekt/streams'
 
 def get_last_stream():
     # Konfiguracja yt-dlp
