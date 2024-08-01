@@ -22,7 +22,6 @@ def upload_to_doodstream(file_path):
         response.raise_for_status()  # Zgłosi wyjątek dla kodów błędów HTTP
     except requests.exceptions.RequestException as e:
         print(f"Błąd podczas pobierania URL do przesyłania: {e}")
-        print(f"Pełna odpowiedź: {response.text}")
         return False
 
     try:
@@ -45,7 +44,6 @@ def upload_to_doodstream(file_path):
             response.raise_for_status()
     except requests.exceptions.RequestException as e:
         print(f"Błąd podczas przesyłania pliku: {e}")
-        print(f"Pełna odpowiedź: {response.text}")
         return False
 
     try:
@@ -59,7 +57,6 @@ def upload_to_doodstream(file_path):
         return True
     else:
         print(f"Błąd podczas przesyłania pliku: {result.get('msg')}")
-        print(f"Pełna odpowiedź: {result}")
         return False
 
 if __name__ == "__main__":
