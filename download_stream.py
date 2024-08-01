@@ -39,9 +39,10 @@ def update_download_info(file_name):
 def get_last_stream():
     # Konfiguracja yt-dlp
     ydl_opts = {
-        'format': 'bestvideo[height<=720]+bestaudio/best[height<=720]/best',
+        'format': 'bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best[ext=mp4]',
         'outtmpl': '%(title)s-%(id)s.%(ext)s',
         'playlistend': 1,  # Pobierz tylko najnowszy stream
+        'merge_output_format': 'mp4',  # Wymusza format wyjściowy MP4
     }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -53,7 +54,7 @@ def get_last_stream():
                 # Wybierz ostatni zakończony stream
                 for entry in info['entries']:
                     if entry.get('live_status') == 'was_live':
-                        file_name = f"{entry['title']}-{entry['id']}.{entry['ext']}"
+                        file_name = f"{entry['title']}-{entry['id']}.mp4"
                         
                         if not check_if_downloaded(file_name):
                             print(f"Znaleziono ostatni stream do pobrania: {entry['title']}")
