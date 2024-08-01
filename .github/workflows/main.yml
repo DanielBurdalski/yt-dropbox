@@ -1,9 +1,9 @@
-name: Archive Latest YouTube Stream
+name: Archive Latest Stream
 
 on:
   schedule:
-    - cron: '0 */6 * * *'  # Run every 6 hours
-  workflow_dispatch:  # Allow manual triggering
+    - cron: '0 12 * * 1'  # Każdy poniedziałek o 12:00 UTC
+  workflow_dispatch:  # Pozwala na ręczne uruchomienie
 
 jobs:
   archive-stream:
@@ -18,23 +18,28 @@ jobs:
     
     - name: Install dependencies
       run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
         python -m pip install --upgrade pip
         pip install yt-dlp requests
+
+    - name: Download stream
+      run: python download_stream.py
     
-    - name: Print versions
-      run: |
-        python --version
-        yt-dlp --version
-    
-    - name: Run archiving script
+    - name: Upload to DOODSTREAM
       env:
         DOODSTREAM_API_KEY: ${{ secrets.DOODSTREAM_API_KEY }}
-      run: python archive_stream.py
-
-    - name: Commit changes
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add .
-        git commit -m "Archive latest stream" -a || echo "No changes to commit"
-        git push
+        for file in *.mp4; do
+          if [ -f "$file" ]; then
+            python upload_to_doodstream.py "$file"
+            rm "$file"
+          else
+            echo "Nie znaleziono pliku MP4 do przesłania."
+          fi
+        done
+
+    - name: Clean up
+      run: |
+        rm -f *.mp4
+        rm -f *.part
