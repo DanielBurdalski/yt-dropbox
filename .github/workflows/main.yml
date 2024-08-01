@@ -9,8 +9,14 @@ jobs:
   archive-stream:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Git
+      run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -44,3 +50,9 @@ jobs:
       run: |
         rm -f *.mp4
         rm -f *.part
+
+    - name: Commit changes
+      run: |
+        git add download_info.json
+        git commit -m "Update download information" || echo "No changes to commit"
+        git push
