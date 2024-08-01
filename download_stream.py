@@ -75,7 +75,7 @@ def get_last_stream():
                             channel_name = get_channel_name(CHANNEL_URL)
 
                             # Zmiana nazwy pliku na NazwaKanału-data
-                            new_file_name = f"{channel_name}-{datetime.now().strftime('%Y-%m-%d')}.mp4"
+                            new_file_name = f"{channel_name}-{(datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')}.mp4"
                             os.rename(file_name, new_file_name)
                             return new_file_name
                         else:
