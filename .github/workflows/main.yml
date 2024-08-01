@@ -22,6 +22,7 @@ jobs:
         sudo apt-get install -y ffmpeg
         python -m pip install --upgrade pip
         pip install yt-dlp requests
+        pip install doodstream
 
     - name: Download stream
       run: python download_stream.py
