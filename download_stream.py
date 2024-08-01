@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import json
 
 # URL kanału
-CHANNEL_URL = 'https://www.youtube.com/@MajsterProjekt/streams'
+CHANNEL_URL = 'https://www.youtube.com/@PaszaTV/streams'
 
 def check_if_downloaded(file_name):
     download_info_file = 'download_info.json'
