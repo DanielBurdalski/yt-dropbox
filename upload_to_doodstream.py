@@ -18,11 +18,17 @@ def upload_to_doodstream(file_path):
 
     try:
         response = d.local_upload(file_path)
-        if response['status'] == 200:
-            print(f"Plik przesłany pomyślnie. URL pliku: {response['result']['download_url']}")
-            return True
+        print(f"Odpowiedź API: {response}")
+        # Zaktualizowane sprawdzenie poprawności odpowiedzi
+        if 'status' in response and response['status'] == 200:
+            if 'result' in response and 'download_url' in response['result']:
+                print(f"Plik przesłany pomyślnie. URL pliku: {response['result']['download_url']}")
+                return True
+            else:
+                print("Odpowiedź nie zawiera 'result' lub 'download_url'.")
+                return False
         else:
-            print(f"Błąd podczas przesyłania pliku: {response.get('msg')}")
+            print(f"Błąd podczas przesyłania pliku: {response.get('msg', 'Nieznany błąd')}")
             return False
     except Exception as e:
         print(f"Błąd podczas przesyłania pliku: {e}")
