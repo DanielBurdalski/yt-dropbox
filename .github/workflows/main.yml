@@ -2,7 +2,7 @@ name: Archive Latest Stream
 
 on:
   schedule:
-    - cron: '0 12 * * 1'  # Każdy poniedziałek o 12:00 UTC
+    - cron: '30 2,3,4 * * 5'  # Każdy poniedziałek o 12:00 UTC
   workflow_dispatch:  # Pozwala na ręczne uruchomienie
 
 jobs:
