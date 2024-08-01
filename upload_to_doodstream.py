@@ -1,6 +1,7 @@
 import requests
 import os
 import sys
+import json
 
 # Klucz API DOODSTREAM (ustaw jako zmienną środowiskową)
 DOODSTREAM_API_KEY = os.getenv('DOODSTREAM_API_KEY')
@@ -12,36 +13,54 @@ def upload_to_doodstream(file_path):
 
     upload_url = 'https://doodapi.com/api/upload/server'
     headers = {
-        'api_key': DOODSTREAM_API_KEY,  # Zmieniono 'Authorization' na 'api_key'
+        'api_key': DOODSTREAM_API_KEY,
     }
 
     # Pobierz URL do przesyłania
-    response = requests.get(upload_url, headers=headers)
-    if response.status_code != 200:
-        print(f"Błąd podczas pobierania URL do przesyłania: {response.status_code}")
+    try:
+        response = requests.get(upload_url, headers=headers)
+        response.raise_for_status()  # Zgłosi wyjątek dla kodów błędów HTTP
+    except requests.exceptions.RequestException as e:
+        print(f"Błąd podczas pobierania URL do przesyłania: {e}")
+        print(f"Pełna odpowiedź: {response.text}")
         return False
 
-    upload_server = response.json().get('result')
+    try:
+        result = response.json()
+    except json.JSONDecodeError:
+        print(f"Nie udało się zdekodować odpowiedzi JSON. Odpowiedź serwera: {response.text}")
+        return False
+
+    upload_server = result.get('result')
     if not upload_server:
-        print("Nie udało się pobrać URL serwera do przesyłania.")
+        print(f"Nie udało się pobrać URL serwera do przesyłania. Pełna odpowiedź: {result}")
         return False
 
     # Prześlij plik
-    with open(file_path, 'rb') as file:
-        files = {'file': file}
-        data = {'api_key': DOODSTREAM_API_KEY}  # Dodano klucz API do danych formularza
-        response = requests.post(upload_server, files=files, data=data)
+    try:
+        with open(file_path, 'rb') as file:
+            files = {'file': file}
+            data = {'api_key': DOODSTREAM_API_KEY}
+            response = requests.post(upload_server, files=files, data=data)
+            response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f"Błąd podczas przesyłania pliku: {e}")
+        print(f"Pełna odpowiedź: {response.text}")
+        return False
 
-    if response.status_code == 200:
+    try:
         result = response.json()
-        if result.get('status') == 200:
-            print(f"Plik przesłany pomyślnie. URL pliku: {result['result']['download_url']}")
-            return True
-        else:
-            print(f"Błąd podczas przesyłania pliku: {result.get('msg')}")
+    except json.JSONDecodeError:
+        print(f"Nie udało się zdekodować odpowiedzi JSON po przesłaniu. Odpowiedź serwera: {response.text}")
+        return False
+
+    if result.get('status') == 200:
+        print(f"Plik przesłany pomyślnie. URL pliku: {result['result']['download_url']}")
+        return True
     else:
-        print(f"Błąd podczas przesyłania pliku: {response.status_code}, {response.text}")
-    return False
+        print(f"Błąd podczas przesyłania pliku: {result.get('msg')}")
+        print(f"Pełna odpowiedź: {result}")
+        return False
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -53,6 +72,7 @@ if __name__ == "__main__":
         print(f"Plik {file_path} nie istnieje.")
         sys.exit(1)
     
+    print(f"Używany klucz API: {DOODSTREAM_API_KEY[:5]}...{DOODSTREAM_API_KEY[-5:]} (pierwsze i ostatnie 5 znaków)")
     success = upload_to_doodstream(file_path)
     if not success:
         sys.exit(1)
