@@ -10,7 +10,6 @@ def get_last_stream():
     ydl_opts = {
         'format': 'bestvideo[height<=720]+bestaudio/best[height<=720]/best',
         'outtmpl': '%(title)s-%(id)s.%(ext)s',
-        'daterange': f"today-365day",  # Nie starsze niż rok
         'playlistend': 1,  # Pobierz tylko najnowszy stream
     }
 
