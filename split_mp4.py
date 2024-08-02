@@ -11,30 +11,40 @@ def human_readable_size(size, decimal_places=2):
             return f"{size:.{decimal_places}f} {unit}"
         size /= 1024
 
+def get_video_duration(file_path):
+    result = subprocess.run(
+        ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', file_path],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT
+    )
+    return float(result.stdout)
+
 def split_file(file_path, max_size=1.7 * 1024 * 1024 * 1024):
     file_size = get_file_size(file_path)
+    video_duration = get_video_duration(file_path)
+    part_duration = video_duration / (file_size / max_size)
+
     if file_size <= max_size:
         print(f"The file is smaller than {max_size} bytes, no need to split.")
         return
     
     part = 1
     start_time = 0
-    duration = max_size / (1024 * 1024)  # Convert bytes to megabytes for ffmpeg
     output_files = []
 
-    while start_time < file_size:
+    while start_time < video_duration:
         output_file = f"{os.path.splitext(file_path)[0]}_part{part}.mp4"
         cmd = [
             'ffmpeg',
             '-i', file_path,
             '-ss', str(start_time),
-            '-fs', str(int(max_size)),
+            '-t', str(part_duration),
             '-c', 'copy',
             output_file
         ]
-        subprocess.run(cmd)
+        subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output_files.append(output_file)
-        start_time += max_size
+        start_time += part_duration
         part += 1
 
     return output_files
