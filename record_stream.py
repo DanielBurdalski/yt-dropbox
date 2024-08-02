@@ -110,7 +110,6 @@ if __name__ == "__main__":
     
     if live_stream_url:
         print_message(f"Znaleziono aktywny stream: {live_stream_url}")
-        print_message("Trwa nagrywanie.")
         recorded_file = record_live_stream(live_stream_url)
         if recorded_file:
             print_message(f"Pomyślnie nagrano plik: {recorded_file}")
