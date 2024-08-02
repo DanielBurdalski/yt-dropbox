@@ -14,7 +14,17 @@ def print_message(message):
     print(message, flush=True)
 
 def get_channel_name(channel_url):
-    # ... (pozostała część funkcji bez zmian)
+    ydl_opts = {
+        'quiet': True,
+        'no_warnings': True,
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        try:
+            info = ydl.extract_info(channel_url, download=False)
+            return info['channel']
+        except Exception as e:
+            print_message(f"Błąd podczas pobierania nazwy kanału: {e}")
+            return None
 
 def filter_ffmpeg_output(line, last_status_time):
     current_time = time.time()
@@ -58,7 +68,19 @@ def record_live_stream(video_url):
             
             file_name = f"{channel_name}-{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
             
-            # ... (pozostała część kodu do uzyskania URL wideo i audio)
+            formats = info['formats']
+            video_url = None
+            audio_url = None
+
+            for f in formats:
+                if f.get('height') == 720 and f.get('vcodec') != 'none':
+                    video_url = f['url']
+                if f.get('acodec') != 'none':
+                    audio_url = f['url']
+            
+            if not video_url or not audio_url:
+                print_message("Nie znaleziono odpowiedniego strumienia wideo lub audio.")
+                return None
             
             ffmpeg_command = [
                 'ffmpeg',
@@ -97,7 +119,25 @@ def record_live_stream(video_url):
             return None
 
 def check_for_live_streams():
-    # ... (pozostała część funkcji bez zmian)
+    ydl_opts = {
+        'quiet': True,
+        'no_warnings': True,
+        'ignoreerrors': True,
+    }
+    
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        try:
+            info = ydl.extract_info(CHANNEL_URL, download=False)
+            if info is None:
+                return None
+            if 'entries' in info:
+                for entry in info['entries']:
+                    if entry.get('is_live'):
+                        return entry['webpage_url']
+            return None
+        except Exception as e:
+            print_message(f"Wystąpił błąd podczas sprawdzania streamów: {e}")
+            return None
 
 if __name__ == "__main__":
     print_message("Rozpoczęcie działania skryptu")
