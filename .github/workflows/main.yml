@@ -1,4 +1,4 @@
-name: Archive Latest Stream
+name: Download Latest Stream
 
 on:
   schedule:
