@@ -15,10 +15,32 @@ def print_message(message):
     print(message, flush=True)
 
 def get_channel_name(channel_url):
-    # ... (pozostała część funkcji bez zmian)
+    # Implementacja funkcji, która pobiera nazwę kanału z jego URL
+    ydl_opts = {
+        'quiet': True,
+        'no_warnings': True,
+    }
+    
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        try:
+            info = ydl.extract_info(channel_url, download=False)
+            return info.get('channel', 'unknown')
+        except Exception as e:
+            print_message(f"Wystąpił błąd podczas pobierania nazwy kanału: {e}")
+            return None
 
 def filter_ffmpeg_output(line, last_status_time):
-    # ... (pozostała część funkcji bez zmian)
+    filtered_line = ""
+    # Dodajemy logikę do filtrowania wyjścia z ffmpeg, jeśli to konieczne
+    if "error" in line.lower():
+        filtered_line = line
+    
+    current_time = time.time()
+    if current_time - last_status_time > 300:  # Co 5 minut
+        print_message(f"Status: {line}")
+        last_status_time = current_time
+
+    return filtered_line, last_status_time
 
 def record_live_stream(video_url):
     ydl_opts = {
@@ -96,7 +118,21 @@ def record_live_stream(video_url):
             return None
 
 def check_for_live_streams():
-    # ... (pozostała część funkcji bez zmian)
+    ydl_opts = {
+        'quiet': True,
+        'no_warnings': True,
+    }
+    
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        try:
+            info = ydl.extract_info(CHANNEL_URL, download=False)
+            for entry in info['entries']:
+                if entry.get('is_live'):
+                    return entry.get('url')
+            return None
+        except Exception as e:
+            print_message(f"Wystąpił błąd podczas sprawdzania streamów: {e}")
+            return None
 
 if __name__ == "__main__":
     print_message("Rozpoczęcie działania skryptu")
