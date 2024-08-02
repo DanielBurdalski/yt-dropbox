@@ -5,7 +5,7 @@ import subprocess
 from datetime import datetime
 
 # URL kanału
-CHANNEL_URL = 'https://www.youtube.com/@PaszaTV/streams'
+CHANNEL_URL = 'https://www.youtube.com/@izakLIVE/streams'
 
 def get_channel_name(channel_url):
     ydl_opts = {
