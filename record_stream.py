@@ -6,6 +6,7 @@ import sys
 import traceback
 import time
 import re
+import random
 
 # URL kanału
 CHANNEL_URL = 'https://www.youtube.com/@odynlive/streams'
@@ -14,43 +15,10 @@ def print_message(message):
     print(message, flush=True)
 
 def get_channel_name(channel_url):
-    ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
-    }
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        try:
-            info = ydl.extract_info(channel_url, download=False)
-            return info['channel']
-        except Exception as e:
-            print_message(f"Błąd podczas pobierania nazwy kanału: {e}")
-            return None
+    # ... (pozostała część funkcji bez zmian)
 
 def filter_ffmpeg_output(line, last_status_time):
-    current_time = time.time()
-    
-    # Filtruj linie, które zawierają specyficzne wzorce
-    patterns_to_ignore = [
-        r'Opening .* for reading',
-        r'Skip \(\'#EXT-X-VERSION',
-        r'Skip \(\'#EXT-X-PROGRAM-DATE-TIME',
-    ]
-    
-    # Jeśli linia pasuje do któregokolwiek z wzorców, ignoruj ją
-    if any(re.search(pattern, line) for pattern in patterns_to_ignore):
-        return None, last_status_time
-    
-    # Wyświetlaj informacje o postępie lub błędach
-    if 'frame=' in line or 'error' in line.lower():
-        return line, last_status_time
-    
-    # Wyświetlaj status co 5 minut
-    if current_time - last_status_time >= 300:  # 300 sekund = 5 minut
-        status = "Nagrywanie przebiega prawidłowo."
-        last_status_time = current_time
-        return status, last_status_time
-    
-    return None, last_status_time
+    # ... (pozostała część funkcji bez zmian)
 
 def record_live_stream(video_url):
     ydl_opts = {
@@ -90,7 +58,7 @@ def record_live_stream(video_url):
                 '-c:a', 'copy',
                 '-reconnect', '1',
                 '-reconnect_streamed', '1',
-                '-reconnect_delay_max', '5',
+                '-reconnect_delay_max', '30',  # Zwiększono maksymalne opóźnienie ponownego połączenia
                 '-t', '18000',  # Limit nagrywania do 5 godzin
                 '-y',  # Nadpisz plik jeśli istnieje
                 file_name
@@ -98,7 +66,9 @@ def record_live_stream(video_url):
             
             process = subprocess.Popen(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
             
-            last_status_time = time.time() - 300  # Inicjalizacja, aby wyświetlić status na początku
+            last_status_time = time.time() - 300
+            error_count = 0
+            max_errors = 5
             while True:
                 output = process.stderr.readline()
                 if output == '' and process.poll() is not None:
@@ -107,6 +77,13 @@ def record_live_stream(video_url):
                     filtered_output, last_status_time = filter_ffmpeg_output(output.strip(), last_status_time)
                     if filtered_output:
                         print_message(filtered_output)
+                    if "HTTP error 429" in output:
+                        error_count += 1
+                        if error_count > max_errors:
+                            print_message("Zbyt wiele błędów 429. Ponowne uruchomienie nagrywania...")
+                            process.terminate()
+                            time.sleep(random.randint(60, 300))  # Losowe opóźnienie między 1 a 5 minut
+                            return record_live_stream(video_url)  # Rekurencyjne wywołanie z tym samym URL
             
             if os.path.exists(file_name):
                 print_message(f"Plik został pomyślnie utworzony: {file_name}")
@@ -119,25 +96,7 @@ def record_live_stream(video_url):
             return None
 
 def check_for_live_streams():
-    ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
-        'ignoreerrors': True,
-    }
-    
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        try:
-            info = ydl.extract_info(CHANNEL_URL, download=False)
-            if info is None:
-                return None
-            if 'entries' in info:
-                for entry in info['entries']:
-                    if entry.get('is_live'):
-                        return entry['webpage_url']
-            return None
-        except Exception as e:
-            print_message(f"Wystąpił błąd podczas sprawdzania streamów: {e}")
-            return None
+    # ... (pozostała część funkcji bez zmian)
 
 if __name__ == "__main__":
     print_message("Rozpoczęcie działania skryptu")
@@ -160,6 +119,6 @@ if __name__ == "__main__":
         else:
             print_message("Nie znaleziono aktywnych streamów.")
         
-        time.sleep(60)  # Czekaj minutę przed ponownym sprawdzeniem
+        time.sleep(random.randint(60, 180))  # Losowe opóźnienie między 1 a 3 minuty
     
     print_message("Zakończenie działania skryptu")
