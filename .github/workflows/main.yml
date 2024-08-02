@@ -4,7 +4,6 @@ on:
   schedule:
     - cron: '*/30 * * * *'
   workflow_dispatch:  # Pozwala na ręczne uruchomienie
- 
 
 jobs:
   archive-stream:
@@ -25,20 +24,19 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y ffmpeg
         python -m pip install --upgrade pip
-        pip install yt-dlp requests
-        pip install doodstream
+        pip install yt-dlp requests doodstream
 
     - name: Download stream
       run: python download_stream.py
       
     - name: Run split script
-      run: python split_mp4.py *.mp4  # Replace with the actual file name
-    
+      run: python split_mp4.py *.mp4  # Skrypt powinien działać dla wszystkich plików MP4 w katalogu
+
     - name: Upload to DOODSTREAM
       env:
         DOODSTREAM_API_KEY: ${{ secrets.DOODSTREAM_API_KEY }}
       run: |
-        for file in *.mp4; do
+        for file in *_part*.mp4; do
           if [ -f "$file" ]; then
             python upload_to_doodstream.py "$file"
             rm "$file"
