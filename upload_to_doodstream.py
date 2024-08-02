@@ -1,7 +1,6 @@
 import os
 import sys
 from doodstream import DoodStream
-import requests
 
 # Klucz API DOODSTREAM (ustaw jako zmienną środowiskową)
 DOODSTREAM_API_KEY = os.getenv('DOODSTREAM_API_KEY')
@@ -12,33 +11,36 @@ if not DOODSTREAM_API_KEY:
 
 d = DoodStream(DOODSTREAM_API_KEY)
 
-def upload_to_doodstream(file_path):
+def upload_to_doodstream(file_path, max_retries=3):
     if not os.path.exists(file_path):
         print(f"Plik {file_path} nie istnieje.")
         return False
 
-    try:
-        response = d.local_upload(file_path)
-        print(f"Odpowiedź API: {response}")
-        
-        if 'status' in response and response['status'] == 200:
-            if 'result' in response and isinstance(response['result'], list) and len(response['result']) > 0:
-                upload_result = response['result'][0]
-                if 'download_url' in upload_result:
-                    print(f"Plik przesłany pomyślnie. URL pliku: {upload_result['download_url']}")
-                    return True
+    attempt = 0
+    while attempt < max_retries:
+        try:
+            response = d.local_upload(file_path)
+            print(f"Odpowiedź API (próba {attempt + 1}): {response}")
+
+            if 'status' in response and response['status'] == 200:
+                if 'result' in response and isinstance(response['result'], list) and len(response['result']) > 0:
+                    upload_result = response['result'][0]
+                    if 'download_url' in upload_result:
+                        print(f"Plik przesłany pomyślnie. URL pliku: {upload_result['download_url']}")
+                        return True
+                    else:
+                        print("Odpowiedź nie zawiera 'download_url' w 'result'.")
                 else:
-                    print("Odpowiedź nie zawiera 'download_url' w 'result'.")
-                    return False
+                    print("Odpowiedź nie zawiera poprawnego 'result'.")
             else:
-                print("Odpowiedź nie zawiera poprawnego 'result'.")
-                return False
-        else:
-            print(f"Błąd podczas przesyłania pliku: {response.get('msg', 'Nieznany błąd')}")
-            return False
-    except Exception as e:
-        print(f"Błąd podczas przesyłania pliku: {e}")
-        return False
+                print(f"Błąd podczas przesyłania pliku: {response.get('msg', 'Nieznany błąd')}")
+        except Exception as e:
+            print(f"Błąd podczas przesyłania pliku (próba {attempt + 1}): {e}")
+
+        attempt += 1
+        print(f"Ponawianie próby... ({attempt}/{max_retries})")
+
+    return False
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
