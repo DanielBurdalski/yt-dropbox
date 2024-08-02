@@ -6,7 +6,7 @@ import subprocess
 from datetime import datetime, timedelta
 
 # URL kanału
-CHANNEL_URL = 'https://www.youtube.com/@PaszaTV/streams'
+CHANNEL_URL = 'https://www.youtube.com/@onet/streams'
 
 def check_if_recorded(file_name):
     record_info_file = 'record_info.json'
