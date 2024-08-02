@@ -6,7 +6,7 @@ import sys
 import traceback
 
 # URL kanału
-CHANNEL_URL = 'https://www.youtube.com/@odynlive/streams'
+CHANNEL_URL = 'https://www.youtube.com/@NocneRadio/streams'
 
 def print_message(message):
     print(message, flush=True)
