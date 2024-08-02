@@ -7,7 +7,7 @@ import sys
 import traceback
 
 # URL kanału
-CHANNEL_URL = 'https://www.youtube.com/@izakLIVE/streams'
+CHANNEL_URL = 'https://www.youtube.com/@Telewizja_Republika/streams'
 
 def print_debug(message):
     print(f"DEBUG: {message}", flush=True)
