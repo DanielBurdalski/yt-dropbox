@@ -1,7 +1,6 @@
 name: Record Stream
 
 on:
-  schedule:
   workflow_dispatch:  # Pozwala na ręczne uruchomienie
 
 jobs:
