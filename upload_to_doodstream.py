@@ -1,6 +1,7 @@
 import os
 import sys
 from doodstream import DoodStream
+import requests
 
 # Klucz API DOODSTREAM (ustaw jako zmienną środowiskową)
 DOODSTREAM_API_KEY = os.getenv('DOODSTREAM_API_KEY')
