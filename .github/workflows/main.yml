@@ -36,7 +36,7 @@ jobs:
       env:
         DOODSTREAM_API_KEY: ${{ secrets.DOODSTREAM_API_KEY }}
       run: |
-        for file in *_part*.mp4; do
+        for file in *.mp4; do
           if [ -f "$file" ]; then
             python upload_to_doodstream.py "$file"
             rm "$file"
