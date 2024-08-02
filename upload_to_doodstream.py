@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import subprocess
 from doodstream import DoodStream
 
 # Klucz API DOODSTREAM (ustaw jako zmienną środowiskową)
@@ -11,44 +12,74 @@ if not DOODSTREAM_API_KEY:
 
 d = DoodStream(DOODSTREAM_API_KEY)
 
-def split_file(file_path, chunk_size):
-    file_name = os.path.basename(file_path)
-    file_dir = os.path.dirname(file_path)
-    chunk_size = chunk_size * 1024 * 1024  # Convert MB to bytes
+def split_video(input_file, segment_time):
+    file_name = os.path.splitext(os.path.basename(input_file))[0]
+    output_template = f"{file_name}_part_%03d.mp4"
     
-    with open(file_path, 'rb') as f:
-        chunk_num = 0
-        while True:
-            chunk = f.read(chunk_size)
-            if not chunk:
-                break
-            chunk_num += 1
-            chunk_name = f"{file_name}.part{chunk_num:03d}"
-            chunk_path = os.path.join(file_dir, chunk_name)
-            with open(chunk_path, 'wb') as chunk_file:
-                chunk_file.write(chunk)
-            yield chunk_path
+    cmd = [
+        "ffmpeg",
+        "-i", input_file,
+        "-c", "copy",
+        "-map", "0",
+        "-segment_time", str(segment_time),
+        "-f", "segment",
+        "-reset_timestamps", "1",
+        output_template
+    ]
+    
+    try:
+        subprocess.run(cmd, check=True)
+        return [f for f in os.listdir() if f.startswith(f"{file_name}_part_") and f.endswith(".mp4")]
+    except subprocess.CalledProcessError as e:
+        print(f"Błąd podczas dzielenia wideo: {e}")
+        return []
+
+def get_video_duration(file_path):
+    cmd = [
+        "ffprobe",
+        "-v", "error",
+        "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+        file_path
+    ]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        return float(result.stdout)
+    except subprocess.CalledProcessError as e:
+        print(f"Błąd podczas pobierania czasu trwania wideo: {e}")
+        return 0
 
 def upload_to_doodstream(file_path):
+    max_size = 2 * 1024 * 1024 * 1024  # 2 GB w bajtach
     file_size = os.path.getsize(file_path)
-    max_size = 2 * 1024 * 1024 * 1024  # 2 GB in bytes
     
     if file_size > max_size:
         print(f"Plik jest większy niż 2 GB. Dzielenie na części...")
-        chunk_size = 1950  # 1950 MB to zapewnić, że każda część będzie mniejsza niż 2 GB
-        uploaded_urls = []
+        duration = get_video_duration(file_path)
+        if duration == 0:
+            print("Nie udało się określić czasu trwania wideo.")
+            return False
         
-        for chunk_path in split_file(file_path, chunk_size):
-            print(f"Przesyłanie części: {chunk_path}")
-            success, url = upload_single_file(chunk_path)
+        # Oblicz czas trwania segmentu, aby każda część miała około 1.9 GB
+        segment_time = int((1.9 * 1024 * 1024 * 1024 / file_size) * duration)
+        
+        split_files = split_video(file_path, segment_time)
+        if not split_files:
+            print("Nie udało się podzielić pliku wideo.")
+            return False
+        
+        uploaded_urls = []
+        for split_file in split_files:
+            print(f"Przesyłanie części: {split_file}")
+            success, url = upload_single_file(split_file)
             if success:
                 uploaded_urls.append(url)
             else:
-                print(f"Błąd podczas przesyłania części {chunk_path}")
+                print(f"Błąd podczas przesyłania części {split_file}")
                 return False
             
             # Usuń część po przesłaniu
-            os.remove(chunk_path)
+            os.remove(split_file)
         
         print("Wszystkie części zostały przesłane.")
         print("URL-e przesłanych części:")
