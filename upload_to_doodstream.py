@@ -40,11 +40,15 @@ def upload_to_doodstream(file_path):
         return False
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Użycie: python upload_to_doodstream.py <ścieżka_do_pliku>")
+    if len(sys.argv) < 2:
+        print("Użycie: python upload_to_doodstream.py <ścieżka_do_pliku1> <ścieżka_do_pliku2> ...")
         sys.exit(1)
-    
-    file_path = sys.argv[1]
-    success = upload_to_doodstream(file_path)
-    if not success:
-        sys.exit(1)
+
+    file_paths = sys.argv[1:]
+
+    for file_path in file_paths:
+        print(f"Przesyłanie pliku: {file_path}")
+        success = upload_to_doodstream(file_path)
+        if not success:
+            print(f"Błąd podczas przesyłania pliku: {file_path}")
+            sys.exit(1)
