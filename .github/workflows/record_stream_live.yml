@@ -1,4 +1,4 @@
-name: Archive Latest Stream
+name: Record Stream
 
 on:
   schedule:
