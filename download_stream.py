@@ -28,6 +28,7 @@ def record_live_stream(video_url):
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
+        'format': 'bestvideo[height<=720]+bestaudio/best[height<=720]',  # Pobierz najlepsze wideo 720p i najlepszy dźwięk
     }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -39,23 +40,29 @@ def record_live_stream(video_url):
             
             file_name = f"{channel_name}-{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
             
-            # Pobierz URL streamu w 720p
-            stream_url = None
-            for format in info['formats']:
-                if format.get('height') == 720:
-                    stream_url = format['url']
-                    break
+            # Pobierz URL streamu
+            formats = info['formats']
+            video_url = None
+            audio_url = None
+
+            for f in formats:
+                if f.get('height') == 720 and f.get('vcodec') != 'none':
+                    video_url = f['url']
+                if f.get('acodec') != 'none':
+                    audio_url = f['url']
             
-            if not stream_url:
-                print_message("Nie znaleziono strumienia w 720p.")
+            if not video_url or not audio_url:
+                print_message("Nie znaleziono odpowiedniego strumienia wideo lub audio.")
                 return None
             
             # Użyj FFmpeg do nagrania streamu
             ffmpeg_command = [
                 'ffmpeg',
-                '-i', stream_url,
-                '-c', 'copy',
-                '-t', '7200',  # Limit nagrywania do 2 godzin
+                '-i', video_url,
+                '-i', audio_url,
+                '-c:v', 'copy',
+                '-c:a', 'copy',
+                '-t', '60',  # Limit nagrywania do 60 sekund
                 file_name
             ]
             
