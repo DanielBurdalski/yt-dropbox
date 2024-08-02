@@ -30,6 +30,9 @@ jobs:
 
     - name: Download stream
       run: python download_stream.py
+      
+    - name: Run split script
+      run: python split_mp4.py *.mp4  # Replace with the actual file name
     
     - name: Upload to DOODSTREAM
       env:
