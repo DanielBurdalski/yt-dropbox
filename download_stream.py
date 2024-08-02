@@ -55,7 +55,7 @@ def record_live_stream(video_url):
                 'ffmpeg',
                 '-i', stream_url,
                 '-c', 'copy',
-                '-t', '20',  # Limit nagrywania do 20 sekund
+                '-t', '120',  # Limit nagrywania do 120 sekund
                 file_name
             ]
             
