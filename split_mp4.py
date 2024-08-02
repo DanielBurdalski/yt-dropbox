@@ -47,6 +47,11 @@ def split_file(file_path, max_size=1.7 * 1024 * 1024 * 1024):
         start_time += part_duration
         part += 1
 
+    # Remove the source file if splitting was successful
+    if output_files:
+        os.remove(file_path)
+        print(f"Source file '{file_path}' has been removed.")
+    
     return output_files
 
 def main(file_path):
