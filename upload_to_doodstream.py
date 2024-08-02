@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import subprocess
+import requests
 from doodstream import DoodStream
 
 # Klucz API DOODSTREAM (ustaw jako zmienną środowiskową)
@@ -12,16 +13,32 @@ if not DOODSTREAM_API_KEY:
 
 d = DoodStream(DOODSTREAM_API_KEY)
 
-def split_video(input_file, segment_time):
+def split_video(input_file, target_size_gb=1.5):
     file_name = os.path.splitext(os.path.basename(input_file))[0]
     output_template = f"{file_name}_part_%03d.mp4"
+    target_size_bytes = int(target_size_gb * 1024 * 1024 * 1024)  # Convert GB to bytes
+    
+    # Get video bitrate
+    cmd = [
+        "ffprobe",
+        "-v", "error",
+        "-select_streams", "v:0",
+        "-count_packets",
+        "-show_entries", "stream=bit_rate",
+        "-of", "csv=p=0",
+        input_file
+    ]
+    bitrate = int(subprocess.check_output(cmd).decode().strip())
+    
+    # Calculate segment duration based on target size and bitrate
+    segment_duration = (target_size_bytes * 8) / bitrate
     
     cmd = [
         "ffmpeg",
         "-i", input_file,
         "-c", "copy",
         "-map", "0",
-        "-segment_time", str(segment_time),
+        "-segment_time", str(int(segment_duration)),
         "-f", "segment",
         "-reset_timestamps", "1",
         output_template
@@ -34,36 +51,13 @@ def split_video(input_file, segment_time):
         print(f"Błąd podczas dzielenia wideo: {e}")
         return []
 
-def get_video_duration(file_path):
-    cmd = [
-        "ffprobe",
-        "-v", "error",
-        "-show_entries", "format=duration",
-        "-of", "default=noprint_wrappers=1:nokey=1",
-        file_path
-    ]
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        return float(result.stdout)
-    except subprocess.CalledProcessError as e:
-        print(f"Błąd podczas pobierania czasu trwania wideo: {e}")
-        return 0
-
 def upload_to_doodstream(file_path):
-    max_size = 2 * 1024 * 1024 * 1024  # 2 GB w bajtach
+    max_size = 1.9 * 1024 * 1024 * 1024  # 1.9 GB w bajtach
     file_size = os.path.getsize(file_path)
     
     if file_size > max_size:
-        print(f"Plik jest większy niż 2 GB. Dzielenie na części...")
-        duration = get_video_duration(file_path)
-        if duration == 0:
-            print("Nie udało się określić czasu trwania wideo.")
-            return False
-        
-        # Oblicz czas trwania segmentu, aby każda część miała około 1.9 GB
-        segment_time = int((1.9 * 1024 * 1024 * 1024 / file_size) * duration)
-        
-        split_files = split_video(file_path, segment_time)
+        print(f"Plik jest większy niż 1.9 GB. Dzielenie na części...")
+        split_files = split_video(file_path)
         if not split_files:
             print("Nie udało się podzielić pliku wideo.")
             return False
@@ -95,25 +89,44 @@ def upload_single_file(file_path):
         return False, None
     
     try:
-        response = d.local_upload(file_path)
+        # Użyj bezpośrednio requests zamiast DoodStream API wrapper
+        url = "https://doodapi.com/api/upload/server"
+        params = {'api_key': DOODSTREAM_API_KEY}
+        response = requests.get(url, params=params)
+        
+        if response.status_code != 200:
+            print(f"Błąd podczas pobierania serwera uploadowego: {response.text}")
+            return False, None
+        
+        upload_url = response.json().get('result')
+        if not upload_url:
+            print("Nie udało się uzyskać URL do przesyłania.")
+            return False, None
+        
+        files = {'file': open(file_path, 'rb')}
+        upload_response = requests.post(upload_url, files=files)
+        
+        if upload_response.status_code != 200:
+            print(f"Błąd podczas przesyłania pliku: {upload_response.text}")
+            return False, None
+        
+        result = upload_response.json()
         
         # Zapisz pełną odpowiedź do pliku
         with open(f'response_{os.path.basename(file_path)}.json', 'w') as f:
-            json.dump(response, f, indent=2)
+            json.dump(result, f, indent=2)
         print(f"Pełna odpowiedź API została zapisana w pliku 'response_{os.path.basename(file_path)}.json'")
         
-        if 'status' in response and response['status'] == 200:
-            if 'result' in response and isinstance(response['result'], list) and len(response['result']) > 0:
-                upload_result = response['result'][0]
-                if 'download_url' in upload_result:
-                    print(f"Plik przesłany pomyślnie. URL pliku: {upload_result['download_url']}")
-                    return True, upload_result['download_url']
-                else:
-                    print("Odpowiedź nie zawiera 'download_url' w 'result'.")
+        if result.get('status') == 200:
+            file_code = result.get('file_code')
+            if file_code:
+                download_url = f"https://dood.so/{file_code}"
+                print(f"Plik przesłany pomyślnie. URL pliku: {download_url}")
+                return True, download_url
             else:
-                print("Odpowiedź nie zawiera poprawnego 'result'.")
+                print("Odpowiedź nie zawiera 'file_code'.")
         else:
-            print(f"Błąd podczas przesyłania pliku: {response.get('msg', 'Nieznany błąd')}")
+            print(f"Błąd podczas przesyłania pliku: {result.get('msg', 'Nieznany błąd')}")
         
         return False, None
     except Exception as e:
