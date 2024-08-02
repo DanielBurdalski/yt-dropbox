@@ -4,6 +4,7 @@ import subprocess
 from datetime import datetime
 import sys
 import traceback
+import time
 
 # URL kanału
 CHANNEL_URL = 'https://www.youtube.com/@odynlive/streams'
@@ -28,7 +29,7 @@ def record_live_stream(video_url):
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
-        'format': 'bestvideo[height<=720]+bestaudio/best[height<=720]',  # Pobierz najlepsze wideo 720p i najlepszy dźwięk
+        'format': 'bestvideo[height<=720]+bestaudio/best[height<=720]',
     }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -40,7 +41,6 @@ def record_live_stream(video_url):
             
             file_name = f"{channel_name}-{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
             
-            # Pobierz URL streamu
             formats = info['formats']
             video_url = None
             audio_url = None
@@ -55,18 +55,28 @@ def record_live_stream(video_url):
                 print_message("Nie znaleziono odpowiedniego strumienia wideo lub audio.")
                 return None
             
-            # Użyj FFmpeg do nagrania streamu
             ffmpeg_command = [
                 'ffmpeg',
                 '-i', video_url,
                 '-i', audio_url,
                 '-c:v', 'copy',
                 '-c:a', 'copy',
+                '-reconnect', '1',
+                '-reconnect_streamed', '1',
+                '-reconnect_delay_max', '5',
                 '-t', '18000',  # Limit nagrywania do 5 godzin
+                '-y',  # Nadpisz plik jeśli istnieje
                 file_name
             ]
             
-            subprocess.run(ffmpeg_command, capture_output=True, text=True)
+            process = subprocess.Popen(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            
+            while True:
+                output = process.stderr.readline()
+                if output == '' and process.poll() is not None:
+                    break
+                if output:
+                    print_message(output.strip().decode())
             
             if os.path.exists(file_name):
                 print_message(f"Plik został pomyślnie utworzony: {file_name}")
@@ -102,20 +112,24 @@ def check_for_live_streams():
 if __name__ == "__main__":
     print_message("Rozpoczęcie działania skryptu")
     
-    try:
-        live_stream_url = check_for_live_streams()
-    except Exception as e:
-        print_message(f"Nieoczekiwany błąd podczas sprawdzania streamów: {e}")
-        sys.exit(1)
-    
-    if live_stream_url:
-        print_message(f"Znaleziono aktywny stream: {live_stream_url}")
-        recorded_file = record_live_stream(live_stream_url)
-        if recorded_file:
-            print_message(f"Pomyślnie nagrano plik: {recorded_file}")
+    while True:
+        try:
+            live_stream_url = check_for_live_streams()
+        except Exception as e:
+            print_message(f"Nieoczekiwany błąd podczas sprawdzania streamów: {e}")
+            time.sleep(60)  # Czekaj minutę przed ponowną próbą
+            continue
+        
+        if live_stream_url:
+            print_message(f"Znaleziono aktywny stream: {live_stream_url}")
+            recorded_file = record_live_stream(live_stream_url)
+            if recorded_file:
+                print_message(f"Pomyślnie nagrano plik: {recorded_file}")
+            else:
+                print_message("Nie udało się nagrać streamu.")
         else:
-            print_message("Nie udało się nagrać streamu.")
-    else:
-        print_message("Nie znaleziono aktywnych streamów.")
+            print_message("Nie znaleziono aktywnych streamów.")
+        
+        time.sleep(60)  # Czekaj minutę przed ponownym sprawdzeniem
     
     print_message("Zakończenie działania skryptu")
