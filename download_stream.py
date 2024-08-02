@@ -4,6 +4,7 @@ import json
 import subprocess
 from datetime import datetime
 import sys
+import traceback
 
 # URL kanału
 CHANNEL_URL = 'https://www.youtube.com/@izakLIVE/streams'
@@ -25,6 +26,7 @@ def get_channel_name(channel_url):
             return channel_name
         except Exception as e:
             print_debug(f"Błąd podczas pobierania nazwy kanału: {e}")
+            print_debug(f"Pełny traceback: {traceback.format_exc()}")
             return None
 
 def record_live_stream(video_url):
@@ -73,18 +75,25 @@ def record_live_stream(video_url):
                 return None
         except Exception as e:
             print_debug(f"Wystąpił błąd podczas nagrywania: {e}")
+            print_debug(f"Pełny traceback: {traceback.format_exc()}")
             return None
 
 def check_for_live_streams():
     print_debug(f"Sprawdzanie aktywnych streamów dla kanału: {CHANNEL_URL}")
     ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
+        'quiet': False,  # Zmienione na False, aby zobaczyć więcej informacji
+        'no_warnings': False,  # Zmienione na False, aby zobaczyć ostrzeżenia
+        'ignoreerrors': True,  # Ignoruj niektóre błędy, aby kontynuować
     }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
+            print_debug("Rozpoczęcie extract_info")
             info = ydl.extract_info(CHANNEL_URL, download=False)
+            print_debug("Zakończenie extract_info")
+            if info is None:
+                print_debug("extract_info zwróciło None")
+                return None
             if 'entries' in info:
                 for entry in info['entries']:
                     if entry.get('is_live'):
@@ -94,6 +103,7 @@ def check_for_live_streams():
             return None
         except Exception as e:
             print_debug(f"Wystąpił błąd podczas sprawdzania streamów: {e}")
+            print_debug(f"Pełny traceback: {traceback.format_exc()}")
             return None
 
 if __name__ == "__main__":
@@ -104,7 +114,12 @@ if __name__ == "__main__":
     print_debug(f"Zawartość katalogu: {os.listdir('.')}")
     
     print_debug("Sprawdzanie aktywnych streamów...")
-    live_stream_url = check_for_live_streams()
+    try:
+        live_stream_url = check_for_live_streams()
+    except Exception as e:
+        print_debug(f"Nieoczekiwany błąd podczas sprawdzania streamów: {e}")
+        print_debug(f"Pełny traceback: {traceback.format_exc()}")
+        sys.exit(1)
     
     if live_stream_url:
         print_debug(f"Znaleziono aktywny stream: {live_stream_url}")
