@@ -6,7 +6,7 @@ import sys
 import traceback
 
 # URL kanału
-CHANNEL_URL = 'https://www.youtube.com/@Telewizja_Republika/streams'
+CHANNEL_URL = 'https://www.youtube.com/@odynlive/streams'
 
 def print_message(message):
     print(message, flush=True)
@@ -62,7 +62,7 @@ def record_live_stream(video_url):
                 '-i', audio_url,
                 '-c:v', 'copy',
                 '-c:a', 'copy',
-                '-t', '60',  # Limit nagrywania do 60 sekund
+                '-t', '18000',  # Limit nagrywania do 5 godzin
                 file_name
             ]
             
