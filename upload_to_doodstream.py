@@ -47,10 +47,14 @@ def get_or_create_folder_id(channel_name):
         print(f"Błąd HTTP: {response.status_code}")
     return None
 
-def upload_to_doodstream(file_path, channel_name, max_retries=3):
+def upload_to_doodstream(file_path, max_retries=3):
     if not os.path.exists(file_path):
         print(f"Plik {file_path} nie istnieje.")
         return False
+
+    # Wyodrębnianie nazwy kanału z nazwy pliku
+    file_name = os.path.basename(file_path)
+    channel_name = file_name.split('-')[0]
 
     folder_id = get_or_create_folder_id(channel_name)
     if not folder_id:
@@ -60,7 +64,6 @@ def upload_to_doodstream(file_path, channel_name, max_retries=3):
     attempt = 0
     while attempt < max_retries:
         try:
-            file_name = os.path.basename(file_path)
             url = f"{DOODSTREAM_API_URL}/upload/url"
             params = {
                 'key': DOODSTREAM_API_KEY,
@@ -96,16 +99,15 @@ def upload_to_doodstream(file_path, channel_name, max_retries=3):
     return False
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Użycie: python upload_to_doodstream.py <nazwa_kanalu> <ścieżka_do_pliku1> <ścieżka_do_pliku2> ...")
+    if len(sys.argv) < 2:
+        print("Użycie: python upload_to_doodstream.py <ścieżka_do_pliku1> <ścieżka_do_pliku2> ...")
         sys.exit(1)
 
-    channel_name = sys.argv[1]
-    file_paths = sys.argv[2:]
+    file_paths = sys.argv[1:]
 
     for file_path in file_paths:
-        print(f"Przesyłanie pliku: {file_path} do kanału: {channel_name}")
-        success = upload_to_doodstream(file_path, channel_name)
+        print(f"Przesyłanie pliku: {file_path}")
+        success = upload_to_doodstream(file_path)
         if not success:
             print(f"Błąd podczas przesyłania pliku: {file_path}")
             sys.exit(1)
