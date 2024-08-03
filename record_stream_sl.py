@@ -6,6 +6,7 @@ import sys
 import time
 import requests
 import re
+import timedelta
 
 # URL kanału
 CHANNEL_URL = 'https://www.youtube.com/@Telewizja_Republika/streams'
