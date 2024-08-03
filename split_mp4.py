@@ -25,7 +25,7 @@ def split_file(file_path, max_size=1.7 * 1024 * 1024 * 1024):
     part_duration = video_duration / (file_size / max_size)
 
     if file_size <= max_size:
-        print(f"The file is smaller than {max_size} bytes, no need to split.")
+        print(f"The file is smaller than 1.7 GB, no need to split.")
         return
     
     part = 1
