@@ -26,9 +26,7 @@ def get_channel_name(channel_url):
 def record_live_stream(video_url):
     try:
         channel_name = get_channel_name(CHANNEL_URL) or "unknown"
-        current_time = datetime.now()
-        new_time = current_time + timedelta(hours=2)
-        file_name = f"{channel_name}-{new_time.strftime('%d-%m-%Y_%H-%M-%S')}.mp4"
+        file_name = f"{channel_name}-{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
         
         streamlink_command = [
             'streamlink',
