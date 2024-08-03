@@ -37,9 +37,14 @@ def record_live_stream(video_url):
             video_url, 'best'
         ]
         
-        process = subprocess.Popen(streamlink_command)
-        time.sleep(120)  # Nagrywaj przez 120 s
+        print_message(f"Rozpoczęcie nagrywania: {' '.join(streamlink_command)}")
+        process = subprocess.Popen(streamlink_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        time.sleep(600)  # Nagrywaj przez 600 sekund (10 minut)
         process.terminate()
+        
+        stdout, stderr = process.communicate()
+        print_message(f"Streamlink stdout: {stdout.decode()}")
+        print_message(f"Streamlink stderr: {stderr.decode()}")
         
         if os.path.exists(file_name):
             print_message(f"Plik został pomyślnie utworzony: {file_name}")
@@ -53,13 +58,21 @@ def record_live_stream(video_url):
 
 def check_for_live_streams():
     try:
+        print_message(f"Sprawdzanie streamów dla URL: {CHANNEL_URL}")
         streams = streamlink.streams(CHANNEL_URL)
         if streams:
+            print_message(f"Znalezione streamy: {streams.keys()}")
             return CHANNEL_URL
+        else:
+            print_message("Nie znaleziono żadnych streamów")
         return None
+    except streamlink.exceptions.NoPluginError:
+        print_message(f"Nie znaleziono odpowiedniego pluginu dla URL: {CHANNEL_URL}")
+    except streamlink.exceptions.PluginError as e:
+        print_message(f"Błąd pluginu: {e}")
     except Exception as e:
-        print_message(f"Wystąpił błąd podczas sprawdzania streamów: {e}")
-        return None
+        print_message(f"Nieoczekiwany błąd podczas sprawdzania streamów: {e}")
+    return None
 
 if __name__ == "__main__":
     print_message("Rozpoczęcie działania skryptu")
