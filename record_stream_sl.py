@@ -40,7 +40,7 @@ def record_live_stream(video_url):
         
         print_message(f"Rozpoczęcie nagrywania: {' '.join(streamlink_command)}")
         process = subprocess.Popen(streamlink_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        time.sleep(100)  # Nagrywaj przez 100 sekund
+        time.sleep(600)  # Nagrywaj przez 600 sekund
         process.terminate()
         
         stdout, stderr = process.communicate()
