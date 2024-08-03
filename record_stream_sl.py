@@ -27,10 +27,7 @@ def get_channel_name(channel_url):
 def record_live_stream(video_url):
     try:
         channel_name = get_channel_name(CHANNEL_URL) or "unknown"
-        # Uzyskaj aktualny czas UTC i dodaj 2 godziny        
-        current_time = datetime.utcnow() + timedelta(hours=2)
-        # Formatuj nazwę pliku z przybliżoną polską datą i czasem
-        file_name = f"{channel_name}-{current_time.strftime('%d-%m-%Y_%H-%M')}.mp4"
+        file_name = f"{channel_name}-{datetime.now().strftime('%d-%m-%Y_%H-%M')}.mp4"
         
         streamlink_command = [
             'streamlink',
