@@ -1,4 +1,4 @@
-name: Record Stream
+name: Record Stream Streamlink
 
 on:
   workflow_dispatch:  # Pozwala na ręczne uruchomienie
