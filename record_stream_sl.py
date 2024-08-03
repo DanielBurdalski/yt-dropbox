@@ -38,7 +38,7 @@ def record_live_stream(video_url):
         ]
         
         process = subprocess.Popen(streamlink_command)
-        time.sleep(600)  # Nagrywaj przez 600 sekund (10 minut)
+        time.sleep(120)  # Nagrywaj przez 120 s
         process.terminate()
         
         if os.path.exists(file_name):
