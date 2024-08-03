@@ -1,0 +1,57 @@
+name: Record Stream
+
+on:
+  workflow_dispatch:  # Pozwala na ręczne uruchomienie
+
+jobs:
+  archive-stream:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.PAT }}  # Use PAT instead of the default GITHUB_TOKEN
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+        python -m pip install --upgrade pip
+        pip install yt-dlp requests doodstream
+
+    - name: Record stream
+      run: python record_stream_sl.py
+      
+    - name: Run split script
+      run: python split_mp4.py *.mp4  # Skrypt powinien działać dla wszystkich plików MP4 w katalogu
+
+    - name: Upload to DOODSTREAM
+      env:
+        DOODSTREAM_API_KEY: ${{ secrets.DOODSTREAM_API_KEY }}
+      run: |
+        for file in *.mp4; do
+          if [ -f "$file" ]; then
+            python upload_to_doodstream.py "$file"
+            rm "$file"
+          else
+            echo "Nie znaleziono pliku MP4 do przesłania."
+          fi
+        done
+
+    - name: Clean up
+      run: |
+        rm -f *.mp4
+        rm -f *.part
+
+    - name: Commit changes
+      run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git add download_info.json
+        git commit -m "Update download information" || echo "No changes to commit"
+        git push
