@@ -2,23 +2,9 @@ name: Record Stream Streamlink
 
 on:
   workflow_dispatch:  # Pozwala na ręczne uruchomienie
-  schedule:
-    - cron: '30 18 * * *'  # 20:30
-    - cron: '5 19 * * *'   # 21:05
-    - cron: '10 19 * * *'  # 21:10
-    - cron: '20 19 * * *'  # 21:20
-    - cron: '30 19 * * *'  # 21:30
-    - cron: '50 19 * * *'  # 21:50
-    - cron: '0 20 * * *'   # 22:00
-    - cron: '20 20 * * *'  # 22:20
-    - cron: '0 21 * * *'   # 23:00
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
 
 jobs:
-  check-and-archive-stream:
+  archive-stream:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -30,26 +16,20 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.9'
-
+    
     - name: Install dependencies
       run: |
+        sudo apt-get install -y ffmpeg
         python -m pip install --upgrade pip
         pip install yt-dlp requests doodstream streamlink
 
-    - name: Check for live stream
-      run: |
-        python check_live_stream.py ${{ secrets.YOUTUBE_CHANNEL_URL }}
-      
     - name: Record stream
-      if: success()
       run: python record_stream_sl.py
       
     - name: Run split script
-      if: success()
-      run: python split_mp4.py *.mp4
+      run: python split_mp4.py *.mp4  # Skrypt powinien działać dla wszystkich plików MP4 w katalogu
 
     - name: Upload to DOODSTREAM
-      if: success()
       env:
         DOODSTREAM_API_KEY: ${{ secrets.DOODSTREAM_API_KEY }}
       run: |
@@ -63,13 +43,11 @@ jobs:
         done
 
     - name: Clean up
-      if: always()
       run: |
         rm -f *.mp4
         rm -f *.part
 
     - name: Commit changes
-      if: success()
       run: |
         git config user.name github-actions
         git config user.email github-actions@github.com
