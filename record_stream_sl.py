@@ -8,7 +8,7 @@ import requests
 import re
 
 # URL kanału
-CHANNEL_URL = 'https://www.youtube.com/@bystrzaktv/streams'
+CHANNEL_URL = 'https://www.youtube.com/@PaszaTV/streams'
 
 def print_message(message):
     print(message, flush=True)
