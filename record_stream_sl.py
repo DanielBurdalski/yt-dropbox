@@ -8,7 +8,7 @@ import requests
 import re
 
 # URL kanału
-CHANNEL_URL = os.getenv('YOUTUBE_CHANNEL_URL')
+CHANNEL_URL = os.getenv('https://www.youtube.com/@bystrzaktv/streams')
 
 def print_message(message):
     print(message, flush=True)
