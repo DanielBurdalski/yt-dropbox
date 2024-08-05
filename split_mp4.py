@@ -19,14 +19,25 @@ def get_video_duration(file_path):
     )
     return float(result.stdout)
 
-def split_file(file_path, max_size=1.7 * 1024 * 1024 * 1024):
+def get_bitrate(file_path):
+    result = subprocess.run(
+        ['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=bit_rate', '-of', 'default=noprint_wrappers=1:nokey=1', file_path],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT
+    )
+    return float(result.stdout)
+
+def split_file(file_path, target_size=1.85 * 1024 * 1024 * 1024, tolerance=0.05 * 1024 * 1024 * 1024):
     file_size = get_file_size(file_path)
     video_duration = get_video_duration(file_path)
-    part_duration = video_duration / (file_size / max_size)
-
-    if file_size <= max_size:
-        print(f"The file is smaller than 1.7 GB, no need to split.")
+    bitrate = get_bitrate(file_path)
+    
+    if file_size <= target_size + tolerance:
+        print(f"The file is smaller than {human_readable_size(target_size + tolerance)}, no need to split.")
         return
+    
+    # Calculate the target duration of each part based on the target size and bitrate
+    target_duration = (target_size * 8) / bitrate
     
     part = 1
     start_time = 0
@@ -34,17 +45,29 @@ def split_file(file_path, max_size=1.7 * 1024 * 1024 * 1024):
 
     while start_time < video_duration:
         output_file = f"{os.path.splitext(file_path)[0]}_part{part}.mp4"
-        cmd = [
-            'ffmpeg',
-            '-i', file_path,
-            '-ss', str(start_time),
-            '-t', str(part_duration),
-            '-c', 'copy',
-            output_file
-        ]
-        subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        # Adjust the part duration to get the file size within the desired range
+        adjusted_duration = target_duration
+        while True:
+            cmd = [
+                'ffmpeg',
+                '-i', file_path,
+                '-ss', str(start_time),
+                '-t', str(adjusted_duration),
+                '-c', 'copy',
+                output_file
+            ]
+            subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            part_size = get_file_size(output_file)
+            
+            if target_size - tolerance <= part_size <= target_size + tolerance or start_time + adjusted_duration >= video_duration:
+                break
+            else:
+                adjusted_duration *= (target_size / part_size)
+                os.remove(output_file)
+        
         output_files.append(output_file)
-        start_time += part_duration
+        start_time += adjusted_duration
         part += 1
 
     # Remove the source file if splitting was successful
