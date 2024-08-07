@@ -8,7 +8,7 @@ import requests
 import re
 
 # URL kanału
-CHANNEL_URL = 'https://www.youtube.com/@HarryDeann/streams'
+CHANNEL_URL = 'https://www.youtube.com/@PaszaTV/streams'
 
 def print_message(message):
     print(message, flush=True)
@@ -85,6 +85,21 @@ def check_for_live_streams():
         print_message(f"Wystąpił błąd podczas sprawdzania streamów: {e}")
         return None
 
+def check_for_new_stream():
+    for _ in range(4):
+        time.sleep(15)
+        new_stream_url = check_for_live_streams()
+        if new_stream_url:
+            return new_stream_url
+
+    for _ in range(5):
+        time.sleep(30)
+        new_stream_url = check_for_live_streams()
+        if new_stream_url:
+            return new_stream_url
+
+    return None
+
 if __name__ == "__main__":
     print_message("Rozpoczęcie działania skryptu")
 
@@ -101,6 +116,18 @@ if __name__ == "__main__":
             print_message(f"Pomyślnie nagrano plik: {recorded_file}")
         else:
             print_message("Nie udało się nagrać streamu.")
+
+        # Sprawdź, czy pojawił się nowy stream
+        new_stream_url = check_for_new_stream()
+        if new_stream_url:
+            print_message(f"Znaleziono nowy aktywny stream: {new_stream_url}")
+            recorded_file = record_live_stream(new_stream_url)
+            if recorded_file:
+                print_message(f"Pomyślnie nagrano plik: {recorded_file}")
+            else:
+                print_message("Nie udało się nagrać nowego streamu.")
+        else:
+            print_message("Nie znaleziono nowych aktywnych streamów.")
     else:
         print_message("Nie znaleziono aktywnych streamów.")
 
