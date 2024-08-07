@@ -8,7 +8,7 @@ import requests
 import re
 
 # URL kanału
-CHANNEL_URL = 'https://www.youtube.com/@PaszaTV/streams'
+CHANNEL_URL = 'https://www.youtube.com/@HarryDeann/streams'
 
 def print_message(message):
     print(message, flush=True)
@@ -27,7 +27,7 @@ def record_live_stream(video_url):
     try:
         channel_name = get_channel_name(CHANNEL_URL) or "unknown"
         file_name = f"{channel_name}-{datetime.now().strftime('%d-%m-%Y_%H-%M')}.mp4"
-        
+
         streamlink_command = [
             'streamlink',
             '--stream-segment-threads', '2',
@@ -37,16 +37,20 @@ def record_live_stream(video_url):
             '-o', file_name,
             video_url, 'best'
         ]
-        
+
         print_message(f"Rozpoczęcie nagrywania: {' '.join(streamlink_command)}")
         process = subprocess.Popen(streamlink_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        time.sleep(19200)  # Nagrywaj przez 5h 20min
-        process.terminate()
-        
-        stdout, stderr = process.communicate()
+
+        # Czekaj na zakończenie procesu lub upływ 5 godzin i 20 minut
+        try:
+            stdout, stderr = process.communicate(timeout=19200)
+        except subprocess.TimeoutExpired:
+            process.terminate()
+            stdout, stderr = process.communicate()
+
         print_message(f"Streamlink stdout: {stdout.decode()}")
         print_message(f"Streamlink stderr: {stderr.decode()}")
-        
+
         if os.path.exists(file_name):
             print_message(f"Plik został pomyślnie utworzony: {file_name}")
             return file_name
@@ -66,7 +70,7 @@ def check_for_live_streams():
             video_id = match.group(1)
             live_url = f"https://www.youtube.com/watch?v={video_id}"
             print_message(f"Znaleziono potencjalny aktywny stream: {live_url}")
-            
+
             # Sprawdź, czy stream jest rzeczywiście aktywny
             streams = streamlink.streams(live_url)
             if streams:
@@ -83,13 +87,13 @@ def check_for_live_streams():
 
 if __name__ == "__main__":
     print_message("Rozpoczęcie działania skryptu")
-    
+
     try:
         live_stream_url = check_for_live_streams()
     except Exception as e:
         print_message(f"Nieoczekiwany błąd podczas sprawdzania streamów: {e}")
         sys.exit(1)
-    
+
     if live_stream_url:
         print_message(f"Znaleziono aktywny stream: {live_stream_url}")
         recorded_file = record_live_stream(live_stream_url)
@@ -99,5 +103,5 @@ if __name__ == "__main__":
             print_message("Nie udało się nagrać streamu.")
     else:
         print_message("Nie znaleziono aktywnych streamów.")
-    
+
     print_message("Zakończenie działania skryptu")
