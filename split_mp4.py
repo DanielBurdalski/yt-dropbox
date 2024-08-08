@@ -25,7 +25,11 @@ def get_bitrate(file_path):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT
     )
-    return float(result.stdout)
+    output = result.stdout.decode().strip()
+    if output == 'N/A':
+        return None
+    else:
+        return float(output)
 
 def split_file(file_path, target_size=1.85 * 1024 * 1024 * 1024, tolerance=0.05 * 1024 * 1024 * 1024):
     file_size = get_file_size(file_path)
@@ -36,13 +40,16 @@ def split_file(file_path, target_size=1.85 * 1024 * 1024 * 1024, tolerance=0.05 
         print(f"The file is smaller than {human_readable_size(target_size + tolerance)}, no need to split.")
         return
     
+    if bitrate is None:
+        print(f"Could not determine the bitrate of the file '{file_path}'. Cannot split the file.")
+        return
+    
     # Calculate the target duration of each part based on the target size and bitrate
     target_duration = (target_size * 8) / bitrate
     
     part = 1
     start_time = 0
     output_files = []
-
     while start_time < video_duration:
         output_file = f"{os.path.splitext(file_path)[0]}_part{part}.mp4"
         
@@ -69,7 +76,6 @@ def split_file(file_path, target_size=1.85 * 1024 * 1024 * 1024, tolerance=0.05 
         output_files.append(output_file)
         start_time += adjusted_duration
         part += 1
-
     # Remove the source file if splitting was successful
     if output_files:
         os.remove(file_path)
