@@ -17,9 +17,6 @@ jobs:
       with:
         python-version: 3.9
 
-    - name: Install ytarchive
-      run: pip install ytarchive
-
     - name: Archive YouTube videos
       run: |
         ytarchive "https://www.youtube.com/watch?v=mYNp4nIlo_g" --output-dir "archive"
