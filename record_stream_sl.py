@@ -8,7 +8,7 @@ import requests
 import re
 
 # URL kanału
-CHANNEL_URL = 'https://www.youtube.com/@FanSimPoland/streams'
+CHANNEL_URL = 'https://www.youtube.com/@izakLIVE/streams'
 
 def print_message(message):
     print(message, flush=True)
@@ -43,7 +43,7 @@ def record_live_stream(video_url):
 
         # Czekaj na zakończenie procesu lub upływ 5 godzin i 20 minut
         try:
-            stdout, stderr = process.communicate(timeout=19200)
+            stdout, stderr = process.communicate(timeout=100)
         except subprocess.TimeoutExpired:
             process.terminate()
             stdout, stderr = process.communicate()
