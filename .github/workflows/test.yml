@@ -17,9 +17,11 @@ jobs:
       with:
         python-version: 3.9
 
-    - name: Archive YouTube videos
-      run: |
-        ytarchive "https://www.youtube.com/watch?v=mYNp4nIlo_g" --output-dir "archive"
+- name: Make ytarchive executable
+      run: chmod +x ./ytarchive
+
+    - name: Run ytarchive
+      run: ./ytarchive https://www.youtube.com/watch?v=mYNp4nIlo_g 720p
 
     - name: Commit and push changes
       uses: mikeal/publish-to-github-action@master
