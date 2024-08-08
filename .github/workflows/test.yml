@@ -20,7 +20,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y yt-dlp youtube-dl FFmpeg
+        sudo apt-get install -y yt-dlp youtube-dl ffmpeg
         python -m pip install --upgrade pip
         
     - name: Make ytarchive executable
