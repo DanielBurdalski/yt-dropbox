@@ -45,6 +45,7 @@ jobs:
       
     - name: Run split script
       run: python split_mp4.py *.mp4  # Skrypt powinien działać dla wszystkich plików MP4 w katalogu
+      continue-on-error: true
 
     - name: Upload to DOODSTREAM
       env:
