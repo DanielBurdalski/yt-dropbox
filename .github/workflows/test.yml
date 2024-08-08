@@ -2,30 +2,28 @@ name: YouTube Archive
 
 on:
   schedule:
-    workflow_dispatch:
     - cron: '0 0 * * 0' # Run every Sunday at 00:00 UTC
-    
-    
-jobs:
+  workflow_dispatch:
 
+jobs:
   archive:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v2
-    
+
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
         python-version: 3.9
-        
+
     - name: Install ytarchive
       run: pip install ytarchive
-      
+
     - name: Archive YouTube videos
       run: |
         ytarchive "https://www.youtube.com/watch?v=mYNp4nIlo_g" --output-dir "archive"
-        
+
     - name: Commit and push changes
       uses: mikeal/publish-to-github-action@master
       env:
