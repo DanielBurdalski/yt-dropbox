@@ -8,7 +8,7 @@ import requests
 import re
 
 # URL kanału
-CHANNEL_URL = 'https://www.youtube.com/@izakLIVE/streams'
+CHANNEL_URL = 'https://www.youtube.com/@PaszaTV/streams'
 
 def print_message(message):
     print(message, flush=True)
@@ -40,7 +40,7 @@ def record_live_stream(video_url):
         
         print_message(f"Rozpoczęcie nagrywania: {' '.join(streamlink_command)}")
         process = subprocess.Popen(streamlink_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        time.sleep(1000)  # Nagrywaj przez 1000s
+        time.sleep(19000)  # Nagrywaj przez 19000s
         process.terminate()
         
         stdout, stderr = process.communicate()
