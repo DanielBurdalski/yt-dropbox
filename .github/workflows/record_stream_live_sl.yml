@@ -35,7 +35,7 @@ jobs:
       run: |
         sudo apt-get install -y ffmpeg
         python -m pip install --upgrade pip
-        pip install yt-dlp requests doodstream streamlink subprocess32
+        pip install yt-dlp requests doodstream streamlink subprocess-run
 
     - name: Record stream
       run: python record_stream_sl.py
