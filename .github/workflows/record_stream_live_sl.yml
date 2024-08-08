@@ -39,6 +39,9 @@ jobs:
 
     - name: Record stream
       run: python record_stream_sl.py
+
+    - name: List files in directory
+      run: ls -lh
       
     - name: Run split script
       run: python split_mp4.py *.mp4  # Skrypt powinien działać dla wszystkich plików MP4 w katalogu
