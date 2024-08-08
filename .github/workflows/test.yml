@@ -28,6 +28,21 @@ jobs:
 
     - name: Run ytarchive
       run: ./ytarchive -w https://www.youtube.com/watch?v=mYNp4nIlo_g 1080p60/best
+      continue-on-error: true
+
+    - name: Check if ytarchive succeeded
+      if: ${{ steps.run-ytarchive.outcome == 'failure' }}
+      run: echo "ytarchive failed. Please check the URL and try again."
+
+    - name: Debug information
+      if: ${{ steps.run-ytarchive.outcome == 'failure' }}
+      run: |
+        echo "Environment variables:"
+        env
+        echo "Installed packages:"
+        pip list
+        echo "ffmpeg version:"
+        ffmpeg -version
 
     - name: Commit and push changes
       uses: mikeal/publish-to-github-action@master
