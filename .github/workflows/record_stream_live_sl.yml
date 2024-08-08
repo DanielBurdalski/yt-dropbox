@@ -16,7 +16,7 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
-
+  
 jobs:
   archive-stream:
     runs-on: ubuntu-latest
@@ -30,22 +30,19 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.9'
-
+    
     - name: Install dependencies
       run: |
-        sudo apt-get install -y ffmpeg chromium-browser chromium-chromedriver
+        sudo apt-get install -y ffmpeg
         python -m pip install --upgrade pip
-        pip install yt-dlp requests selenium streamlink subprocess-run
+        pip install yt-dlp requests doodstream streamlink subprocess-run
 
     - name: Record stream
-      env:
-        YOUTUBE_EMAIL: ${{ secrets.YOUTUBE_EMAIL }}
-        YOUTUBE_PASSWORD: ${{ secrets.YOUTUBE_PASSWORD }}
       run: python record_stream_sl.py
 
     - name: List files in directory
       run: ls -lh
-
+      
     - name: Run split script
       run: python split_mp4.py *.mp4  # Skrypt powinien działać dla wszystkich plików MP4 w katalogu
       continue-on-error: true
