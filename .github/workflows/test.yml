@@ -3,7 +3,8 @@ name: YouTube Archive
 on:
   schedule:
     - cron: '0 0 * * 0' # Run every Sunday at 00:00 UTC
-
+    workflow_dispatch:
+    
 jobs:
 
   archive:
