@@ -32,56 +32,47 @@ def get_bitrate(file_path):
     else:
         return float(output)
 
-def split_file(file_path, target_size=1.85 * 1024 * 1024 * 1024, tolerance=0.05 * 1024 * 1024 * 1024):
+def split_file(file_path, target_size=1.85 * 1024 * 1024 * 1024):
     file_size = get_file_size(file_path)
     video_duration = get_video_duration(file_path)
     bitrate = get_bitrate(file_path)
-    
-    if file_size <= target_size + tolerance:
-        print(f"The file is smaller than {human_readable_size(target_size + tolerance)}, no need to split.")
+
+    if file_size <= target_size:
+        print(f"The file is smaller than {human_readable_size(target_size)}, no need to split.")
         return
-    
+
     if bitrate is None:
         print(f"Could not determine the bitrate of the file '{file_path}'. Cannot split the file.")
         return
-    
+
     # Calculate the target duration of each part based on the target size and bitrate
     target_duration = (target_size * 8) / bitrate
-    
+
     part = 1
     start_time = 0
     output_files = []
     while start_time < video_duration:
         output_file = f"{os.path.splitext(file_path)[0]}_part{part}.mp4"
-        
-        # Adjust the part duration to get the file size within the desired range
-        adjusted_duration = target_duration
-        while True:
-            cmd = [
-                'ffmpeg',
-                '-i', file_path,
-                '-ss', str(start_time),
-                '-t', str(adjusted_duration),
-                '-c', 'copy',
-                output_file
-            ]
-            subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            part_size = get_file_size(output_file)
-            
-            if target_size - tolerance <= part_size <= target_size + tolerance or start_time + adjusted_duration >= video_duration:
-                break
-            else:
-                adjusted_duration *= (target_size / part_size)
-                os.remove(output_file)
-        
+        end_time = min(start_time + target_duration, video_duration)
+
+        cmd = [
+            'ffmpeg',
+            '-i', file_path,
+            '-ss', str(start_time),
+            '-to', str(end_time),
+            '-c', 'copy',
+            output_file
+        ]
+        subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
         output_files.append(output_file)
-        start_time += adjusted_duration
+        start_time = end_time
         part += 1
-    
+
     if output_files:
         os.remove(file_path)
         print(f"Source file '{file_path}' has been removed.")
-    
+
     return output_files
 
 def main(file_paths):
@@ -102,5 +93,5 @@ if __name__ == "__main__":
             print("No MP4 files found in the current directory.")
             sys.exit(1)
         file_paths = files
-    
+
     main(file_paths)
