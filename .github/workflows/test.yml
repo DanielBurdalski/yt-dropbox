@@ -21,7 +21,7 @@ jobs:
       run: chmod +x ./ytarchive
 
     - name: Run ytarchive
-      run: ./ytarchive https://www.youtube.com/watch?v=qhpDgXFHxC8
+      run: ./ytarchive https://www.youtube.com/watch?v=mYNp4nIlo_g 480p
 
     - name: Commit and push changes
       uses: mikeal/publish-to-github-action@master
